@@ -3,8 +3,9 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 // import { HttpStatusCode, responsePromisifier } from "./helpers/response-handler";
 // import { AppError } from "./helpers/error";
-import { patientSeenStatusRouter } from "./PatientSeenStatus/route";
-import { patientSeenStatusGrid } from "./PatientSeenStatus/controller";
+import { clinicDataRouter } from "./ClinicData/route";
+import { clinicDataDto } from "./ClinicData/controller";
+import { SessionCurrentStatus } from "./ClinicData/model";
 
 dotenv.config();
 
@@ -23,13 +24,16 @@ app.use(express.json());
 //     response.promise(() => {throw error;});
 // }
 
-app.use("/patientSeenStatus", patientSeenStatusRouter());
+app.use("/clinicData", clinicDataRouter());
 // app.use(resourceNotFoundHandler);
 // app.use(errorHandler);
 
 function initializeServer() {
+    clinicDataDto.currentStatus = SessionCurrentStatus.NOT_STARTED;
+    clinicDataDto.doctorName = "Dr Madnani"
+    clinicDataDto.startTime = "11 am"
     for(let i=0; i<200; i++) {
-        patientSeenStatusGrid.patientSeenStatusList.push({id: i+1, status: false});
+        clinicDataDto.patientSeenStatusList.push({id: i+1, status: false});
     }
 }
 
