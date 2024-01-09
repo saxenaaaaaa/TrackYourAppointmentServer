@@ -1,12 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 import { ClinicDataDTO, SessionCurrentStatus } from "./model";
 import { HttpStatusCode } from "../helpers/response-handler";
+import { getTodaysDate } from "../util/util";
+import { persistUpdatedClinicData } from "./service";
 
-export const clinicDataDto: ClinicDataDTO = {
+export let clinicDataDto: ClinicDataDTO = {
     patientSeenStatusList: new Array<{id: number, status: boolean}>(),
     doctorName: "",
     startTime: "",
-    currentStatus: SessionCurrentStatus.NOT_STARTED
+    currentStatus: SessionCurrentStatus.NOT_STARTED,
+    date: getTodaysDate()
 };
 
 let subscribers: any[] = [];
@@ -17,7 +20,9 @@ function sendUpdatesToAll(clinicDataDto: ClinicDataDTO) {
 
 export const updateClinicData = async function (request: Request, response: Response, next?: NextFunction) {
     // response.promise(async () => {
+        console.log("Got update request")
         populateClinicDataDto(clinicDataDto, request.body);
+        await persistUpdatedClinicData(clinicDataDto);
         sendUpdatesToAll(clinicDataDto);
         response.status(HttpStatusCode.OK).send("Update Sent");
     // });
@@ -52,9 +57,10 @@ export const getClinicData = async function (request: Request, response: Respons
     // });
 }
 
-function populateClinicDataDto(clinicDataDto: ClinicDataDTO, requestBody: any) {
-    clinicDataDto.currentStatus = requestBody.currentStatus;
-    clinicDataDto.doctorName = requestBody.doctorName;
-    clinicDataDto.startTime = requestBody.startTime;
-    clinicDataDto.patientSeenStatusList = requestBody.patientSeenStatusList;
+function populateClinicDataDto(clinicDataDto: ClinicDataDTO, data: any) {
+    clinicDataDto.currentStatus = data.currentStatus;
+    clinicDataDto.doctorName = data.doctorName;
+    clinicDataDto.startTime = data.startTime;
+    clinicDataDto.patientSeenStatusList = data.patientSeenStatusList;
+    clinicDataDto.date = data.date;
 }

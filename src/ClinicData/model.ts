@@ -17,7 +17,7 @@ export class ClinicData {
             }
         }
     })
-    public date!: string;
+    public date!: string; // date is stored in dd/mm/yyyy format
 
     @prop({
         required: true,
@@ -34,6 +34,25 @@ export class ClinicData {
         enum: SessionCurrentStatus
     })
     public currentStatus!: SessionCurrentStatus
+
+    @prop({
+        required: true,
+        type: () => PatientSeenStatus
+    })
+    public patientSeenStatusList!: PatientSeenStatus[]
+}
+
+export class PatientSeenStatus {
+    @prop({
+        required: true
+    })
+    public id!: number;
+
+    @prop({
+        required: true,
+        default: false
+    })
+    public status!: boolean;
 }
 
 export interface ClinicDataDTO {
@@ -41,7 +60,8 @@ export interface ClinicDataDTO {
         id: number,
         status: boolean
     }[],
-    doctorName: string
-    startTime: string
-    currentStatus: SessionCurrentStatus
+    doctorName: string;
+    startTime: string;
+    currentStatus: SessionCurrentStatus;
+    date: string
 }
