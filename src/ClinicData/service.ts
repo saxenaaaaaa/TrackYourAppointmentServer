@@ -15,8 +15,10 @@ export const persistUpdatedClinicData = async(clinicDataDto: ClinicDataDTO) => {
 
 export const fetchClinicDataByDate = async(date: string) => {
     try {
+        console.log("Going to fetch clinic data");
         return await ClinicDataModel.findOne(ClinicDataModel.where({ date: date }));
     } catch(error) {
+        console.error("Error while fetching clinic data from mongo", error);
         throw error; // todo: Add proper error handling
     }
 }
