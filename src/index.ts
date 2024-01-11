@@ -31,6 +31,9 @@ app.use(cors());
 // const errorHandler = (error: Error, request: Request, response: Response, next?: NextFunction) => {
 //     response.promise(() => {throw error;});
 // }
+app.get("/health", (request: Request, response: Response, next: NextFunction) => {
+    response.status(200).json({status: 'ok', message: "Server is running healthy"});
+})
 
 app.use("/clinicData", clinicDataRouter());
 // app.use(resourceNotFoundHandler);
