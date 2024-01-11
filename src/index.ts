@@ -47,7 +47,7 @@ async function initializeServer() {
         for(let i=0; i<200; i++) {
             clinicDataDto.patientSeenStatusList.push({id: i+1, status: false});
         }
-        await mongoose.connect("mongodb://127.0.0.1:27017/trackappointment");
+        await mongoose.connect(`mongodb://${process.env.MONGO_URI}/trackappointment`);
         console.log("Successfully connected with mongodb");
         const clinicData = await fetchClinicDataByDate(getTodaysDate());
         console.log("Fetched clinic data from mongo");
@@ -61,7 +61,7 @@ async function initializeServer() {
     
 }
 
-app.listen(port, "192.168.1.7", async () => {
+app.listen(port, async () => {
     await initializeServer();
     console.log(`Node server is running at port ${port}`);
 });
