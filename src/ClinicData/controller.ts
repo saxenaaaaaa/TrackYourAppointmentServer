@@ -7,7 +7,7 @@ import { persistUpdatedClinicData } from "./service";
 export let clinicDataDto: ClinicDataDTO = {
     patientSeenStatusList: new Array<{ id: number, status: boolean }>(),
     doctorName: "",
-    startTime: "",
+    schedule: "",
     currentStatus: SessionCurrentStatus.NOT_STARTED,
     date: getTodaysDate()
 };
@@ -62,7 +62,7 @@ export const getClinicData = async function (request: Request, response: Respons
 function populateClinicDataDto(clinicDataDto: ClinicDataDTO, data: any) {
     clinicDataDto.currentStatus = data.currentStatus;
     clinicDataDto.doctorName = data.doctorName;
-    clinicDataDto.startTime = data.startTime;
+    clinicDataDto.schedule = data.schedule;
     clinicDataDto.patientSeenStatusList = data.patientSeenStatusList;
     clinicDataDto.date = data.date;
 }

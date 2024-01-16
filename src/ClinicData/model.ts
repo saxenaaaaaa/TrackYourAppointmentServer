@@ -27,7 +27,7 @@ export class ClinicData {
     @prop({
         required: true
     })
-    public startTime!: string;
+    public schedule!: string;
 
     @prop({
         required: true,
@@ -61,7 +61,7 @@ export interface ClinicDataDTO {
         status: boolean
     }[],
     doctorName: string;
-    startTime: string;
+    schedule: string;
     currentStatus: SessionCurrentStatus;
     date: string
 }

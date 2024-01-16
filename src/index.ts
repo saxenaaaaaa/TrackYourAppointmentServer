@@ -5,10 +5,12 @@ import mongoose from "mongoose";
 // import { AppError } from "./helpers/error";
 import { clinicDataRouter } from "./ClinicData/route";
 import { clinicDataDto } from "./ClinicData/controller";
-import { ClinicData, ClinicDataDTO, SessionCurrentStatus } from "./ClinicData/model";
+import { ClinicDataDTO, SessionCurrentStatus } from "./ClinicData/model";
 import { fetchClinicDataByDate } from "./ClinicData/service";
 import { getTodaysDate } from "./util/util";
 import cors from "cors";
+import fs from "fs";
+import https from "https";
 
 dotenv.config();
 
@@ -43,7 +45,7 @@ async function initializeServer() {
     try {
         clinicDataDto.currentStatus = SessionCurrentStatus.NOT_STARTED;
         clinicDataDto.doctorName = "Madnani"
-        clinicDataDto.startTime = "11 am"
+        clinicDataDto.schedule = "12pm to 3pm, Everyday"
         for(let i=0; i<200; i++) {
             clinicDataDto.patientSeenStatusList.push({id: i+1, status: false});
         }
@@ -61,15 +63,27 @@ async function initializeServer() {
     
 }
 
-app.listen(port, async () => {
+const privateKey = fs.readFileSync('/usr/src/app/certs/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/usr/src/app/certs/fullchain.pem', 'utf8');
+// const ca = fs.readFileSync('/path/to/your/ca.pem', 'utf8'); // Optional: Include CA certificate
+
+const credentials = { key: privateKey, cert: certificate};
+const httpsServer = https.createServer(credentials, app);
+
+httpsServer.listen(port, async () => {
     await initializeServer();
     console.log(`Node server is running at port ${port}`);
 });
 
+// app.listen(port, async () => {
+//     await initializeServer();
+//     console.log(`Node server is running at port ${port}`);
+// });
+
 function populateClinicDataDto(clinicDataDto: ClinicDataDTO, data: any) {
     clinicDataDto.currentStatus = data.currentStatus;
     clinicDataDto.doctorName = data.doctorName;
-    clinicDataDto.startTime = data.startTime;
+    clinicDataDto.schedule = data.schedule;
     clinicDataDto.patientSeenStatusList = data.patientSeenStatusList;
     clinicDataDto.date = data.date;
 }
