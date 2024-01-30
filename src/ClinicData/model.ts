@@ -65,3 +65,14 @@ export interface ClinicDataDTO {
     currentStatus: SessionCurrentStatus;
     date: string
 }
+
+export const DoctorsList = [
+    {
+        name: "A. K. Singh"
+    },
+    {
+        name: "Siddharth Madnani"
+    }
+]
+
+export const clinicDataByName = new Map<string, ClinicDataDTO>();

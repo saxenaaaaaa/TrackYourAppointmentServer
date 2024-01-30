@@ -4,13 +4,13 @@ import mongoose from "mongoose";
 // import { HttpStatusCode, responsePromisifier } from "./helpers/response-handler";
 // import { AppError } from "./helpers/error";
 import { clinicDataRouter } from "./ClinicData/route";
-import { clinicDataDto } from "./ClinicData/controller";
-import { ClinicDataDTO, SessionCurrentStatus } from "./ClinicData/model";
-import { fetchClinicDataByDate } from "./ClinicData/service";
+import { ClinicDataDTO, DoctorsList, SessionCurrentStatus, clinicDataByName } from "./ClinicData/model";
+import { fetchClinicDataByDateAndName } from "./ClinicData/service";
 import { getTodaysDate } from "./util/util";
 import cors from "cors";
 import fs from "fs";
 import https from "https";
+import { subscribersByName } from "./ClinicData/controller";
 
 dotenv.config();
 
@@ -43,20 +43,29 @@ app.use("/clinicData", clinicDataRouter());
 
 async function initializeServer() {
     try {
-        clinicDataDto.currentStatus = SessionCurrentStatus.NOT_STARTED;
-        clinicDataDto.doctorName = "Madnani"
-        clinicDataDto.schedule = "12pm to 3pm, Everyday"
-        for(let i=0; i<200; i++) {
-            clinicDataDto.patientSeenStatusList.push({id: i+1, status: false});
-        }
+        DoctorsList.forEach(doctorListItem => {
+            const patientSeenStatusList = [];
+            for(let i=0; i<200; i++) {
+                patientSeenStatusList.push({id: i+1, status: false});
+            }
+            let clinicDataForDoctor: ClinicDataDTO = {
+                currentStatus: SessionCurrentStatus.NOT_STARTED,
+                doctorName: doctorListItem.name,
+                schedule:"12pm to 3pm, Everyday",
+                patientSeenStatusList: patientSeenStatusList,
+                date: getTodaysDate()
+            }
+            clinicDataByName.set(doctorListItem.name, clinicDataForDoctor)
+            subscribersByName.set(doctorListItem.name, []);
+        });
         await mongoose.connect(`mongodb://${process.env.MONGO_URI}/trackappointment`);
         console.log("Successfully connected with mongodb");
-        const clinicData = await fetchClinicDataByDate(getTodaysDate());
-        console.log("Fetched clinic data from mongo");
-        if(clinicData) {
-            populateClinicDataDto(clinicDataDto, clinicData);
-        }
-        // console.log("Clinic Data Dto : ", clinicDataDto);
+        DoctorsList.forEach(async (doctorListItem) => {
+            const clinicData = await fetchClinicDataByDateAndName(getTodaysDate(), doctorListItem.name);
+            if(clinicData) {
+                populateClinicDataDto(clinicDataByName.get(doctorListItem.name)!, clinicData);
+            }
+        })
     } catch(err) {
         console.log(`Error while connecting to mongodb: ${err}`);
     }
