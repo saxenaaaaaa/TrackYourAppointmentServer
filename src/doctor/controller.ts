@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { DoctorDataDTO } from "./model";
 import { HttpStatusCode } from "../helpers/response-handler";
 import * as doctorService from "./service";
+import { updateDoctorInCache } from "../ClinicData/cache";
 
 export const createOrUpdateDoctor = async function (request: Request, response: Response, next?: NextFunction) {
     
@@ -22,6 +23,7 @@ export const createOrUpdateDoctor = async function (request: Request, response: 
                 }
                 else {
                     await doctorService.updateDoctor(doctorData);
+                    await updateDoctorInCache(doctorData._id);
                     response.status(HttpStatusCode.OK).json({status: 200, message: "Doctor data updated successfully."});
                 }
             }
@@ -40,6 +42,7 @@ export const createOrUpdateDoctor = async function (request: Request, response: 
             }
             if(doctorData.name && doctorData.password && doctorData.schedule) {
                 const createdDoctorDocumentDto = await doctorService.createDoctor(doctorData);
+                await updateDoctorInCache(createdDoctorDocumentDto._id!);
                 response.status(HttpStatusCode.OK).json({status: 200, message: "Record created or updated successfully."});
             }
             else {

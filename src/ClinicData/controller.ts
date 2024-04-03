@@ -1,37 +1,46 @@
 import { NextFunction, Request, Response } from "express";
-import { ClinicDataDTO, DoctorsList, clinicDataByName } from "./model";
+import { ClinicDataDTO } from "./model";
 import { HttpStatusCode } from "../helpers/response-handler";
 import { persistUpdatedClinicData } from "./service";
+import { clinicDataByDoctorId, doctorList, populateClinicDataDto, subscribersByDoctorId } from "./cache";
 
-export const subscribersByName: Map<string,any[]> = new Map<string,any[]>();
-
-function sendUpdatesToAll(clinicDataDto: ClinicDataDTO) {
-    subscribersByName.get(clinicDataDto.doctorName)!.forEach(subscriber => subscriber.response.write(`data: ${JSON.stringify(clinicDataDto)}\n\n`));
+function sendUpdatesToAll(doctorId: string, clinicDataDto: ClinicDataDTO) {
+    console.log("Subscribers by doctorId : ", subscribersByDoctorId)
+    subscribersByDoctorId.get(doctorId)!.forEach(subscriber => subscriber.response.write(`data: ${JSON.stringify(clinicDataDto)}\n\n`));
 }
 
 export const updateClinicData = async function (request: Request, response: Response, next?: NextFunction) {
     // response.promise(async () => {
     console.log("Got update request")
-    const doctorName = request.body.doctorName as string;
-    const clinicDataDto = clinicDataByName.get(doctorName)!;
-    populateClinicDataDto(clinicDataDto, request.body);
-    await persistUpdatedClinicData(clinicDataDto);
-    sendUpdatesToAll(clinicDataDto);
-    response.status(HttpStatusCode.OK).send("Update Sent");
+    const doctorId = request.body.doctorId as string;
+    if(doctorList.find(doctorDataDto => doctorDataDto._id == doctorId) === undefined) {
+        response.status(HttpStatusCode.BAD_REQUEST).json({message: "Invalid doctor Id"});
+    }
+    else {
+        const clinicDataDto = clinicDataByDoctorId.get(doctorId);
+        const populatedClinicDataDto = populateClinicDataDto(request.body, doctorId, clinicDataDto);
+        if(clinicDataDto === undefined) {
+            clinicDataByDoctorId.set(doctorId, populatedClinicDataDto)
+        }
+        await persistUpdatedClinicData(populatedClinicDataDto);
+        sendUpdatesToAll(doctorId, populatedClinicDataDto);
+        response.status(HttpStatusCode.OK).send("Update Sent");
+    }
     // });
 }
 
 export const getClinicData = async function (request: Request, response: Response, next: NextFunction) {
     // response.promise(async () => {
     console.log("Received get request.");
-    const doctorName = request.query.doctorName as string;
+    const doctorId = request.query.doctorId as string;
     const headers = {
         'Content-Type': 'text/event-stream',
         'Connection': 'keep-alive',
         'Cache-Control': 'no-cache'
     };
     response.writeHead(200, headers);
-    const clinicDataDto = clinicDataByName.get(doctorName);
+    // Todo: This should not have stale data because we reset the cache every night at 3am. Test this in action.
+    const clinicDataDto = clinicDataByDoctorId.get(doctorId);
     const data = `data: ${JSON.stringify(clinicDataDto)}\n\n`;
 
     response.write(data);
@@ -42,31 +51,19 @@ export const getClinicData = async function (request: Request, response: Respons
         id: subscriberId,
         response
     };
-    console.log("Subscribers by name : ", subscribersByName);
-    console.log("received doctor name ", doctorName);
+    console.log("Subscribers by name : ", subscribersByDoctorId);
+    console.log("received doctor id ", doctorId);
     // todo: The following line will return undefined if wrong doctor name is passed by the client and the server will 
     // stop with an error. Implement proper error handling here.
-    const subscribersForDoctor = subscribersByName.get(doctorName)!;
+    const subscribersForDoctor = subscribersByDoctorId.get(doctorId)!;
     subscribersForDoctor.push(newSubscriber);
 
     request.on('close', () => {
         console.log(`${subscriberId} Connection closed`);
-        let subscribersForDoctor = subscribersByName.get(doctorName)!;
+        let subscribersForDoctor = subscribersByDoctorId.get(doctorId)!;
         subscribersForDoctor = subscribersForDoctor.filter(subscriber => subscriber.id !== subscriberId);
-        subscribersByName.set(doctorName,subscribersForDoctor);
+        subscribersByDoctorId.set(doctorId,subscribersForDoctor);
     });
     // response.end();
     // });
-}
-
-export const getDoctorsList = async (request: Request, response: Response, next: NextFunction) => {
-    response.status(HttpStatusCode.OK).json({ doctorsList: DoctorsList});
-}
-
-function populateClinicDataDto(clinicDataDto: ClinicDataDTO, data: any) {
-    clinicDataDto.currentStatus = data.currentStatus;
-    clinicDataDto.doctorName = data.doctorName;
-    clinicDataDto.schedule = data.schedule;
-    clinicDataDto.patientSeenStatusList = data.patientSeenStatusList;
-    clinicDataDto.date = data.date;
 }

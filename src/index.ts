@@ -4,18 +4,17 @@ import mongoose from "mongoose";
 // import { HttpStatusCode, responsePromisifier } from "./helpers/response-handler";
 // import { AppError } from "./helpers/error";
 import { clinicDataRouter } from "./ClinicData/route";
-import { ClinicDataDTO, DoctorsList, SessionCurrentStatus, clinicDataByName } from "./ClinicData/model";
-import { fetchClinicDataByDateAndName } from "./ClinicData/service";
-import { getTodaysDate } from "./util/util";
 import cors from "cors";
+import { doctorRouter } from "./doctor/route";
+import { clinicDataByDoctorId, doctorList, initializeCache, subscribersByDoctorId } from "./ClinicData/cache";
 import fs from "fs";
 import https from "https";
-import { subscribersByName } from "./ClinicData/controller";
 
 dotenv.config();
 
 const app: Express = express();
 const port = parseInt(process.env.PORT ?? "8000");
+// const serverIp = "192.168.1.5"
 
 app.use(express.urlencoded()); // To parse URL-encoded bodies
 app.use(express.json());
@@ -41,31 +40,21 @@ app.use("/clinicData", clinicDataRouter());
 // app.use(resourceNotFoundHandler);
 // app.use(errorHandler);
 
+app.use("/doctor", doctorRouter());
+
 async function initializeServer() {
     try {
-        DoctorsList.forEach(doctorListItem => {
-            const patientSeenStatusList = [];
-            for(let i=0; i<200; i++) {
-                patientSeenStatusList.push({id: i+1, status: false});
-            }
-            let clinicDataForDoctor: ClinicDataDTO = {
-                currentStatus: SessionCurrentStatus.NOT_STARTED,
-                doctorName: doctorListItem.name,
-                schedule:"12pm to 3pm, Everyday",
-                patientSeenStatusList: patientSeenStatusList,
-                date: getTodaysDate()
-            }
-            clinicDataByName.set(doctorListItem.name, clinicDataForDoctor)
-            subscribersByName.set(doctorListItem.name, []);
-        });
+        
         await mongoose.connect(`mongodb://${process.env.MONGO_URI}/trackappointment`);
+        // await mongoose.connect("mongodb://127.0.0.1:27017/trackappointment")
         console.log("Successfully connected with mongodb");
-        DoctorsList.forEach(async (doctorListItem) => {
-            const clinicData = await fetchClinicDataByDateAndName(getTodaysDate(), doctorListItem.name);
-            if(clinicData) {
-                populateClinicDataDto(clinicDataByName.get(doctorListItem.name)!, clinicData);
-            }
-        })
+        // initialize clinic data cache from mongo
+        await initializeCache();
+        console.log("Cache initialized with - ");
+        console.log("doctorsList : ", doctorList);
+        console.log("ClinicDataByDoctorId: ", clinicDataByDoctorId)
+        console.log("SubscribersByDoctorId: ", subscribersByDoctorId)
+
     } catch(err) {
         console.log(`Error while connecting to mongodb: ${err}`);
     }
@@ -84,15 +73,7 @@ httpsServer.listen(port, async () => {
     console.log(`Node server is running at port ${port}`);
 });
 
-// app.listen(port, async () => {
+// app.listen(port, "0.0.0.0", async () => {
 //     await initializeServer();
 //     console.log(`Node server is running at port ${port}`);
 // });
-
-function populateClinicDataDto(clinicDataDto: ClinicDataDTO, data: any) {
-    clinicDataDto.currentStatus = data.currentStatus;
-    clinicDataDto.doctorName = data.doctorName;
-    clinicDataDto.schedule = data.schedule;
-    clinicDataDto.patientSeenStatusList = data.patientSeenStatusList;
-    clinicDataDto.date = data.date;
-}
