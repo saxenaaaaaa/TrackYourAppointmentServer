@@ -3,15 +3,16 @@ import { ClinicDataDTO } from "./model";
 import { HttpStatusCode } from "../helpers/response-handler";
 import { persistUpdatedClinicData } from "./service";
 import { clinicDataByDoctorId, doctorList, populateClinicDataDto, subscribersByDoctorId } from "./cache";
+import { logger } from "../logger";
 
 function sendUpdatesToAll(doctorId: string, clinicDataDto: ClinicDataDTO) {
-    console.log("Subscribers by doctorId : ", subscribersByDoctorId)
+    logger.info("Subscribers by doctorId : ", subscribersByDoctorId.get(doctorId))
     subscribersByDoctorId.get(doctorId)!.forEach(subscriber => subscriber.response.write(`data: ${JSON.stringify(clinicDataDto)}\n\n`));
 }
 
 export const updateClinicData = async function (request: Request, response: Response, next?: NextFunction) {
     // response.promise(async () => {
-    console.log("Got update request")
+    logger.info("Got update request")
     const doctorId = request.body.doctorId as string;
     if(doctorList.find(doctorDataDto => doctorDataDto._id == doctorId) === undefined) {
         response.status(HttpStatusCode.BAD_REQUEST).json({message: "Invalid doctor Id"});
@@ -31,7 +32,7 @@ export const updateClinicData = async function (request: Request, response: Resp
 
 export const getClinicData = async function (request: Request, response: Response, next: NextFunction) {
     // response.promise(async () => {
-    console.log("Received get request.");
+    logger.info("Received get request.");
     const doctorId = request.query.doctorId as string;
     const headers = {
         'Content-Type': 'text/event-stream',
@@ -51,15 +52,15 @@ export const getClinicData = async function (request: Request, response: Respons
         id: subscriberId,
         response
     };
-    console.log("Subscribers by name : ", subscribersByDoctorId);
-    console.log("received doctor id ", doctorId);
+    logger.info("Subscribers by doctorId : ", subscribersByDoctorId.get(doctorId));
+    logger.info("received doctor id ", doctorId);
     // todo: The following line will return undefined if wrong doctor name is passed by the client and the server will 
     // stop with an error. Implement proper error handling here.
     const subscribersForDoctor = subscribersByDoctorId.get(doctorId)!;
     subscribersForDoctor.push(newSubscriber);
 
     request.on('close', () => {
-        console.log(`${subscriberId} Connection closed`);
+        logger.info(`${subscriberId} Connection closed`);
         let subscribersForDoctor = subscribersByDoctorId.get(doctorId)!;
         subscribersForDoctor = subscribersForDoctor.filter(subscriber => subscriber.id !== subscriberId);
         subscribersByDoctorId.set(doctorId,subscribersForDoctor);

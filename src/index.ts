@@ -9,6 +9,7 @@ import { doctorRouter } from "./doctor/route";
 import { clinicDataByDoctorId, doctorList, initializeCache, subscribersByDoctorId } from "./ClinicData/cache";
 import fs from "fs";
 import https from "https";
+import { logger } from "./logger";
 
 dotenv.config();
 
@@ -47,16 +48,16 @@ async function initializeServer() {
         
         await mongoose.connect(`mongodb://${process.env.MONGO_URI}/trackappointment`);
         // await mongoose.connect("mongodb://127.0.0.1:27017/trackappointment")
-        console.log("Successfully connected with mongodb");
+        logger.info("Successfully connected with mongodb");
         // initialize clinic data cache from mongo
         await initializeCache();
-        console.log("Cache initialized with - ");
-        console.log("doctorsList : ", doctorList);
-        console.log("ClinicDataByDoctorId: ", clinicDataByDoctorId)
-        console.log("SubscribersByDoctorId: ", subscribersByDoctorId)
+        logger.info("Cache initialized with - ");
+        logger.info("doctorsList : ", doctorList);
+        logger.info("ClinicDataByDoctorId: ", clinicDataByDoctorId)
+        logger.info("SubscribersByDoctorId: ", subscribersByDoctorId)
 
     } catch(err) {
-        console.log(`Error while connecting to mongodb: ${err}`);
+        logger.error(`Error while connecting to mongodb: ${err}`);
     }
     
 }
@@ -70,10 +71,10 @@ const httpsServer = https.createServer(credentials, app);
 
 httpsServer.listen(port, async () => {
     await initializeServer();
-    console.log(`Node server is running at port ${port}`);
+    logger.info(`Node server is running at port ${port}`);
 });
 
 // app.listen(port, "0.0.0.0", async () => {
 //     await initializeServer();
-//     console.log(`Node server is running at port ${port}`);
+//     logger.info(`Node server is running at port ${port}`);
 // });

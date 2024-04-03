@@ -3,6 +3,7 @@ import { DoctorDataDTO } from "./model";
 import { HttpStatusCode } from "../helpers/response-handler";
 import * as doctorService from "./service";
 import { updateDoctorInCache } from "../ClinicData/cache";
+import { logger } from "../logger";
 
 export const createOrUpdateDoctor = async function (request: Request, response: Response, next?: NextFunction) {
     
@@ -28,7 +29,7 @@ export const createOrUpdateDoctor = async function (request: Request, response: 
                 }
             }
             else {
-                console.log("Error occurred while updating doctor: Wrong _id passed");
+                logger.error("Error occurred while updating doctor: Wrong _id passed");
                 response.status(HttpStatusCode.BAD_REQUEST).json({message: 
                     "Error occurred while updating doctor: Wrong _id passed"
                 });
@@ -46,7 +47,7 @@ export const createOrUpdateDoctor = async function (request: Request, response: 
                 response.status(HttpStatusCode.OK).json({status: 200, message: "Record created or updated successfully."});
             }
             else {
-                console.log("Error occurred while creating doctor: name, password and schedule are required fields.");
+                logger.error("Error occurred while creating doctor: name, password and schedule are required fields.");
                 response.status(HttpStatusCode.BAD_REQUEST).json({message: 
                     "Error occurred while creating doctor: name, password and schedule are required fields."
                 });
@@ -54,26 +55,26 @@ export const createOrUpdateDoctor = async function (request: Request, response: 
         }
     }
     catch (error) {
-        console.log("Error occurred while creating/updating doctor", error);
+        logger.error("Error occurred while creating/updating doctor", error);
         response.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({message: "Internal Server Error"});
     }
 }
 
 export const getDoctors = async function (request: Request, response: Response, next?: NextFunction) {
     try {
-        console.log("Get Doctors called")
+        logger.info("Get Doctors called")
         const doctorsList: DoctorDataDTO[] = await doctorService.fetchDoctorsList();
         response.status(HttpStatusCode.OK).json({doctorsList: doctorsList});
     }
     catch (error) {
-        console.log("Error occurred while getting the list of doctors", error);
+        logger.error("Error occurred while getting the list of doctors", error);
         response.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({message: "Internal Server Error"});
     }
 }
 
 export const getDoctorById = async function (request: Request, response: Response, next?: NextFunction) {
     try {
-        console.log("getDoctorById called");
+        logger.info("getDoctorById called");
         const doctorDocumentDto: DoctorDataDTO | null = await doctorService.fetchDoctorById(request.params.doctorId);
         if(doctorDocumentDto) {
             response.status(HttpStatusCode.OK).json({doctor: doctorDocumentDto});
@@ -82,7 +83,7 @@ export const getDoctorById = async function (request: Request, response: Respons
             response.status(HttpStatusCode.BAD_REQUEST).json({message: "Invalid doctor Id"});
         }
     } catch (error) {
-        console.log("Error occurred while fetching doctor", error);
+        logger.error("Error occurred while fetching doctor", error);
         response.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({message: "Internal Server Error"});
     }
 }
@@ -90,7 +91,7 @@ export const getDoctorById = async function (request: Request, response: Respons
 export const login = async function (request: Request, response: Response, next?: NextFunction) {
     try {
         const {_id, password} = request.body;
-        console.log("Doctor Login Called.")
+        logger.info("Doctor Login Called.")
         const doctorDocumentDto: DoctorDataDTO | null = await doctorService.fetchDoctorById(_id, true);
         if(doctorDocumentDto?.password == password) {
             response.status(HttpStatusCode.OK).json({doctor: doctorService.convertDoctorDboToDto(doctorDocumentDto)});
@@ -100,7 +101,7 @@ export const login = async function (request: Request, response: Response, next?
         }
     }
     catch (error) {
-        console.log("Error occurred while getting the list of doctors", error);
+        logger.error("Error occurred while getting the list of doctors", error);
         response.status(HttpStatusCode.INTERNAL_SERVER_ERROR).json({message: "Internal Server Error"});
     }
 }

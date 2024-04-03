@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 import { DoctorModel } from "../model-exports";
 import { DoctorDataDTO } from "./model";
 import { Types } from "mongoose";
@@ -26,7 +27,7 @@ export const createDoctor = async(doctorData: DoctorDataDTO) => {
         const newDoctorDocument =  await newDoctor.save();
         return convertDoctorDboToDto(newDoctorDocument)
     } catch(error) {
-        console.log("Error while creating new doctor in the database : ", error);
+        logger.error("Error while creating new doctor in the database : ", error);
         throw error; // todo: Add proper error handling
     }
 }
@@ -60,7 +61,7 @@ export const fetchDoctorByName = async(doctorName: string) => {
 export const fetchDoctorsList = async() => {
     try {
         const doctorDocumentsList = await DoctorModel.find();
-        // console.log(doctorDocumentsList)
+        // logger.info(doctorDocumentsList)
         return doctorDocumentsList.map(doctorDocument => convertDoctorDboToDto(doctorDocument));
     } catch(error) {
         throw error; // todo: Add proper error handling

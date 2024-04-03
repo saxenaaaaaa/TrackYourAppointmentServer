@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { ClinicDataModel } from "../model-exports";
 import { ClinicData, ClinicDataDTO } from "./model";
+import { logger } from "../logger";
 
 export const persistUpdatedClinicData = async(clinicDataDto: ClinicDataDTO) => {
     try {
@@ -22,10 +23,10 @@ export const persistUpdatedClinicData = async(clinicDataDto: ClinicDataDTO) => {
 
 export const fetchClinicDataByDateAndDoctor = async(date: string, doctorId: string) => {
     try {
-        // console.log("Going to fetch clinic data");
+        // logger.info("Going to fetch clinic data");
         return await ClinicDataModel.findOne(ClinicDataModel.where({ date: date, doctor: new Types.ObjectId(doctorId) }));
     } catch(error) {
-        console.error("Error while fetching clinic data from mongo", error);
+        logger.error("Error while fetching clinic data from mongo", error);
         throw error; // todo: Add proper error handling
     }
 }
