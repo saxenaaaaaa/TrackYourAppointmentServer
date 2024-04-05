@@ -29,9 +29,9 @@ export const createOrUpdateDoctor = async function (request: Request, response: 
                 }
             }
             else {
-                logger.error("Error occurred while updating doctor: Wrong _id passed");
+                logger.error(`Error occurred while updating doctor. Wrong _id passed: ${doctorData._id}`);
                 response.status(HttpStatusCode.BAD_REQUEST).json({message: 
-                    "Error occurred while updating doctor: Wrong _id passed"
+                    `Error occurred while updating doctor: Wrong _id passed: ${doctorData._id}`
                 });
             }
         }
@@ -74,7 +74,7 @@ export const getDoctors = async function (request: Request, response: Response, 
 
 export const getDoctorById = async function (request: Request, response: Response, next?: NextFunction) {
     try {
-        logger.info("getDoctorById called");
+        logger.info(`getDoctorById called for doctorId: ${request.params.doctorId}`);
         const doctorDocumentDto: DoctorDataDTO | null = await doctorService.fetchDoctorById(request.params.doctorId);
         if(doctorDocumentDto) {
             response.status(HttpStatusCode.OK).json({doctor: doctorDocumentDto});
@@ -91,7 +91,7 @@ export const getDoctorById = async function (request: Request, response: Respons
 export const login = async function (request: Request, response: Response, next?: NextFunction) {
     try {
         const {_id, password} = request.body;
-        logger.info("Doctor Login Called.")
+        logger.info(`Doctor Login Called for doctorId: ${_id}`);
         const doctorDocumentDto: DoctorDataDTO | null = await doctorService.fetchDoctorById(_id, true);
         if(doctorDocumentDto?.password == password) {
             response.status(HttpStatusCode.OK).json({doctor: doctorService.convertDoctorDboToDto(doctorDocumentDto)});

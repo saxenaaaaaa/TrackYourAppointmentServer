@@ -6,10 +6,11 @@ import mongoose from "mongoose";
 import { clinicDataRouter } from "./ClinicData/route";
 import cors from "cors";
 import { doctorRouter } from "./doctor/route";
-import { clinicDataByDoctorId, doctorList, initializeCache, subscribersByDoctorId } from "./ClinicData/cache";
+import { cacheResetAt3AmEveryNight, clinicDataByDoctorId, doctorList, initializeCache, subscribersByDoctorId } from "./ClinicData/cache";
 import fs from "fs";
 import https from "https";
 import { logger } from "./logger";
+import { ClinicDataDTO } from "./ClinicData/model";
 
 dotenv.config();
 
@@ -51,10 +52,8 @@ async function initializeServer() {
         logger.info("Successfully connected with mongodb");
         // initialize clinic data cache from mongo
         await initializeCache();
-        logger.info("Cache initialized with - ");
-        logger.info("doctorsList : ", doctorList);
-        logger.info("ClinicDataByDoctorId: ", clinicDataByDoctorId)
-        logger.info("SubscribersByDoctorId: ", subscribersByDoctorId)
+        cacheResetAt3AmEveryNight(); // Todo: This is required to refresh the cache with db data everyday. We need to test this in action.
+        printCache();
 
     } catch(err) {
         logger.error(`Error while connecting to mongodb: ${err}`);
@@ -78,3 +77,16 @@ httpsServer.listen(port, async () => {
 //     await initializeServer();
 //     logger.info(`Node server is running at port ${port}`);
 // });
+
+function printCache() {
+    const clinicDataObj: {[key: string]: ClinicDataDTO} = {};
+    clinicDataByDoctorId.forEach((clinicDataDto: ClinicDataDTO, doctorId: string) => {
+        clinicDataObj[doctorId] = {...clinicDataDto, patientSeenStatusList: []}
+    })
+    const subscribersDataObj: {[key: string]: {id: string, response: any}[]} = {}
+    subscribersByDoctorId.forEach((subscribers: any[], doctorId: string) => subscribersDataObj[doctorId] = subscribers);
+    logger.info(`Cache initialized with: 
+    doctorsList: ${JSON.stringify(doctorList)}
+    clinicData: ${JSON.stringify(clinicDataObj)}
+    SubscribersByDoctorId: ${JSON.stringify(subscribersDataObj)}`);
+}

@@ -4,12 +4,14 @@ import * as doctorService from "../doctor/service";
 import { fetchClinicDataByDateAndDoctor } from "./service";
 import { getTodaysDate } from "../util/util";
 import { MAX_SESSION_SIZE } from "../constants";
+import { logger } from "../logger";
 
 export const doctorList: DoctorDataDTO[] = []
 export const clinicDataByDoctorId = new Map<string, ClinicDataDTO>();
 export const subscribersByDoctorId: Map<string,any[]> = new Map<string,any[]>();
 
 export async function initializeCache() {
+    logger.info("Going to initialize cache")
     const fetchedDoctorsList = await doctorService.fetchDoctorsList();
     doctorList.splice(0, doctorList.length)
     doctorList.push(...fetchedDoctorsList)
@@ -70,4 +72,18 @@ export function populateClinicDataDto(clinicDataDocument: any, doctorId: string,
         clinicDataDtoCopy.patientSeenStatusList = patientSeenStatusList
     }
     return clinicDataDtoCopy
+}
+
+export function cacheResetAt3AmEveryNight() {
+    
+    let nowDate = new Date();
+    let millisTill3Am = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), 3, 0, 0, 0).getTime() - nowDate.getTime();
+    if (millisTill3Am < 0) {
+        millisTill3Am += 86400000; // it's after 3am, try 3am tomorrow.
+    }
+    setTimeout(async () => {
+        await initializeCache();
+        logger.info("Successfully refreshed the cache");
+        cacheResetAt3AmEveryNight();
+    }, millisTill3Am);
 }
