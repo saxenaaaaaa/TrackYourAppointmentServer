@@ -6,6 +6,7 @@ export const doctorRouter = () => {
     router.get("/", doctorController.getDoctors);
     router.post("/", doctorController.createOrUpdateDoctor);
     router.get("/:doctorId", doctorController.getDoctorById);
+    router.post("/generateQR/:doctorId", doctorController.generateQRCode)
     router.post("/login", doctorController.login)
     return router;
 }
