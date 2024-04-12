@@ -50,8 +50,8 @@ app.use("/doctor", doctorRouter());
 async function initializeServer() {
     try {
         
-        // await mongoose.connect(`mongodb://${process.env.MONGO_URI}/trackappointment`);
-        await mongoose.connect("mongodb://127.0.0.1:27017/trackappointment")
+        await mongoose.connect(`mongodb://${process.env.MONGO_URI}/trackappointment`);
+        // await mongoose.connect("mongodb://127.0.0.1:27017/trackappointment")
         logger.info("Successfully connected with mongodb");
         // initialize clinic data cache from mongo
         await initializeCache();
@@ -64,22 +64,22 @@ async function initializeServer() {
     
 }
 
-// const privateKey = fs.readFileSync('/usr/src/app/certs/privkey.pem', 'utf8');
-// const certificate = fs.readFileSync('/usr/src/app/certs/fullchain.pem', 'utf8');
-// // const ca = fs.readFileSync('/path/to/your/ca.pem', 'utf8'); // Optional: Include CA certificate
+const privateKey = fs.readFileSync('/usr/src/app/certs/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/usr/src/app/certs/fullchain.pem', 'utf8');
+// const ca = fs.readFileSync('/path/to/your/ca.pem', 'utf8'); // Optional: Include CA certificate
 
-// const credentials = { key: privateKey, cert: certificate};
-// const httpsServer = https.createServer(credentials, app);
+const credentials = { key: privateKey, cert: certificate};
+const httpsServer = https.createServer(credentials, app);
 
-// httpsServer.listen(port, async () => {
-//     await initializeServer();
-//     logger.info(`Node server is running at port ${port}`);
-// });
-
-app.listen(port, "0.0.0.0", async () => {
+httpsServer.listen(port, async () => {
     await initializeServer();
     logger.info(`Node server is running at port ${port}`);
 });
+
+// app.listen(port, "0.0.0.0", async () => {
+//     await initializeServer();
+//     logger.info(`Node server is running at port ${port}`);
+// });
 
 function printCache() {
     const clinicDataObj: {[key: string]: ClinicDataDTO} = {};
